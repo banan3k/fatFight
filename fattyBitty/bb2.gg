@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<DataSet>
+  <xs:schema id="NewDataSet" xmlns="" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xs:element name="NewDataSet" msdata:IsDataSet="true" msdata:UseCurrentLocale="true">
+      <xs:complexType>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element name="Table1">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="wynik" type="xs:int" minOccurs="0" />
+                <xs:element name="column_2" type="xs:string" msdata:DataType="InputControl+aba, Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null" minOccurs="0" />
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+        </xs:choice>
+      </xs:complexType>
+    </xs:element>
+  </xs:schema>
+  <diffgr:diffgram xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" xmlns:diffgr="urn:schemas-microsoft-com:xml-diffgram-v1">
+    <NewDataSet>
+      <Table1 diffgr:id="Table11" msdata:rowOrder="0" diffgr:hasChanges="inserted">
+        <wynik>0</wynik>
+        <column_2>InputControl+aba</column_2>
+      </Table1>
+    </NewDataSet>
+  </diffgr:diffgram>
+</DataSet>
