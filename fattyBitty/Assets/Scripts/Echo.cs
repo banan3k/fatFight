@@ -187,6 +187,7 @@ public class Echo : MonoBehaviour {
 	bool listining = false;
 	public DataTable EchoRank;// = new DataTable("EchoRank");
 	void Start () {
+		//Debug.Log("lol");
 		actualSituation = new Situation();
 	//	EchoRank = GameObject.Find("Main Camera").GetComponent<InputControl>().loadAllRanks();
 		if(true /*EchoRank==null*/) {
@@ -250,7 +251,7 @@ public class Echo : MonoBehaviour {
 	}
 	void Update () {
 		if(listining) {
-			Debug.Log(actualSituation.distance+" vs "+actualSituation.lifeDiff+" vs "+actualSituation.angle);
+			//Debug.Log(actualSituation.distance+" vs "+actualSituation.lifeDiff+" vs "+actualSituation.angle);
 			actualSituation.distance = defineDistanceState();
 			actualSituation.lifeDiff = defineLifeState();
 			actualSituation.angle = defineAngleState();

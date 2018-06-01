@@ -53,6 +53,7 @@
   <ItemGroup>
      <Compile Include="Assets\Scripts\BodyControl.cs" />
      <Compile Include="Assets\Scripts\Echo.cs" />
+     <Compile Include="Assets\Scripts\GroundedControl.cs" />
      <Compile Include="Assets\Scripts\InputControl.cs" />
      <Compile Include="Assets\Scripts\test1.cs" />
  <Reference Include="Facebook.Unity.Settings">

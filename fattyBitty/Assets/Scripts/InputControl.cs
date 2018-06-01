@@ -31,14 +31,16 @@ public class InputControl : MonoBehaviour {
 		public int score = 0;
 		public bool attack = false;
 		public Combo() {
-			id = generateID();
+			this.id = generateID();
 		//	situation = sit;
 		//	situation = GameObject.Find("Main Camera").GetComponent<Echo>().checkSituation();
 		}
 		string generateID()
 		{
+
 			System.Guid myGUID = System.Guid.NewGuid();
-			return myGUID.ToString();;
+			Debug.Log("new ID : "+myGUID.ToString());
+			return myGUID.ToString();
 		}
 		public void addMove(Move newMove) {
 			this.numberOfMoves++;
@@ -340,6 +342,7 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 	Echo.Situation recordingSituation;
 
 	void Start () {
+
 		EchoScript = GameObject.Find("Main Camera").GetComponent<Echo>();
 		recordingSituation = new Echo.Situation();
 
@@ -365,10 +368,12 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 
 	IEnumerator switchCombo()
   {
+			Debug.Log("started count :"+recordingCombo.id);
 			changeState=2;
 			yield return new WaitForSeconds(secondsToSwitchCombo);
+			StopCoroutine("switchCombo");
 			allCombos.Add(recordingCombo);
-
+			Debug.Log("adding ID : "+recordingCombo.id);
 			everyCombo.Add(recordingCombo.id,recordingCombo);
 
 			Echo.rememberCombo dataForEcho = new Echo.rememberCombo(recordingCombo.id, recordingCombo.score, recordingSituation);
@@ -385,7 +390,7 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 			Debug.Log(recordingCombo.Moves.Count+" vs "+recordingCombo.Moves[0].analogStateR);
 	}
 	int changeState = 0;
-	Combo recordingCombo = new Combo();
+	Combo recordingCombo;// = new Combo();
 	string currentStateL="", lastStateL="";
 	string currentStateR="", lastStateR="";
 	float calculatedMoveTime = 0;
@@ -473,7 +478,7 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 			diffYR = speedChangeNewYR - speedChangeLastYR;
 			//Debug.Log(wasChangeFast(diffX, diffY));
 			//Debug.Log(speedChangeNewX - speedChangeLastX);
-			if(valueXL+valueYL!=0 || valueXR+valueYR!=0 || clickedAction>=0) {
+			if(valueXL!=0 || valueYL!=0 || valueXR!=0 || valueYR!=0 || clickedAction>=0) {
 					StopCoroutine("switchCombo");
 
 
@@ -483,6 +488,8 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 					//		Debug.Log("added");
 						//	allCombos.Add(recordingCombo);
 						//}
+						//Debug.Log("lalalalala"+clickedAction);
+						recordingCombo = null;
 						recordingCombo = new Combo();
 						recordingSituation = EchoScript.checkSituation();
 					}// else {
@@ -527,7 +534,10 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 			//	Debug.Log(valueXL+" vs "+valueYL+" vs "+defineState(valueXL, valueYL));
 			} else {
 				if(changeState==1) {
-					StartCoroutine(switchCombo());
+					changeState=2;
+					StopCoroutine("switchCombo");
+					StartCoroutine("switchCombo");
+					Debug.Log("just stated "+Time.deltaTime+" "+gameObject.transform.name);
 				}
 			}
 		}
