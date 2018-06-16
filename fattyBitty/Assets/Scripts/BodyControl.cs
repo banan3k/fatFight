@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class BodyControl : MonoBehaviour {
 
+	public bool IsAI = false;
+
 	bool isGrounded = false;
 
 	const int _maxLife = 100;
@@ -12,10 +14,11 @@ public class BodyControl : MonoBehaviour {
 	const int _teethNumber = 4;
 	const int _rotateSpeed = 50;
 	const int _movingSpeed = 5;
-	const int _jumpingPower = 500;
+	const int _jumpingPower = 300;
 	const float _jumpingPowerMultiply = 1.5f;
 	const int _jumpingPowerHigh = (int)((float)_jumpingPower*_jumpingPowerMultiply);
-	const int _rotationTailSpeed = 10;
+	const int _rotationTailSpeed = 2000;
+	const int _movingTailSpeed = 2;
 	const float _minToJump = 0.5f;
 	const int _degreeMax = 35;
 	int teethLevels = (int)(100/_teethNumber);
@@ -27,6 +30,9 @@ public class BodyControl : MonoBehaviour {
 
 	bool jumpAction = false;
 
+	float startingTailMass = 0;
+	const float _MinMass = 0.0001f;
+
 	Transform eyelid;
 	Sprite[][] allMouth = new Sprite[5][];
 
@@ -34,18 +40,28 @@ Transform bottomAngle;
 Transform middleAngle;
 Transform topAngle;
 Transform topBody;
-Transform topAngleHolder;
+Transform topAngleHolder, bottomAngleHolder;
+
+Transform mainCamera;
+AI ai;
 
 Transform tailBody;
 
+Quaternion _QuaternionZero = new Quaternion(0,0,0,0);
+
+Vector2 tailStartingPosition;
 
 RigidbodyConstraints2D topBodyCons;
 	void Start () {
-
+		mainCamera = GameObject.Find("Main Camera").transform;
+		ai = mainCamera.GetComponent<AI>();
+		//Debug.Log(Quaternion.identity);
 		bottomAngle = gameObject.transform.Find("top/bottomAngle");
 		middleAngle = gameObject.transform.Find("top/middleAngle");
 		topAngle = gameObject.transform.Find("top/topAngle");
 		topAngleHolder = gameObject.transform.Find("top/topAngleHolder");
+		bottomAngleHolder = gameObject.transform.Find("top/bottomAngleHolder");
+
 
 		topBody = gameObject.transform.Find("top");
 
@@ -54,6 +70,10 @@ RigidbodyConstraints2D topBodyCons;
 		eyelid = gameObject.transform.Find("top/eyes/eyelid");
 
 		topBodyCons = topBody.GetComponent<Rigidbody2D>().constraints;
+
+		tailStartingPosition = tailBody.localPosition;
+		startingTailMass = tailBody.GetComponent<Rigidbody2D>().mass;
+		//Debug.Log(tailStartingPosition);
 
 		for(int i=0; i<=4; i++) {
 			allMouth[i] = new Sprite[5];
@@ -123,54 +143,86 @@ RigidbodyConstraints2D topBodyCons;
 				//tailBody.GetComponent<Rigidbody2D>().simulated = true;
 
 				jumpAction = false;
+
+				tailBody.GetComponent<Rigidbody2D>().mass = startingTailMass;
 			}
 			tailBody.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.None;
 		}
 	}
 
-	void movementDeciding() {
-		float valueXL = Input.GetAxis ("Horizontal");
+	void smoothTailReset() {
+		float step = -_rotationTailSpeed * Time.deltaTime;
+		float step2 = _movingTailSpeed * Time.deltaTime;
+		if((tailBody.transform.rotation.eulerAngles.z<90 && topBody.transform.rotation.eulerAngles.z<180) || (tailBody.transform.rotation.eulerAngles.z<270 && topBody.transform.rotation.eulerAngles.z>180)) {
+			step *= -1;
+		}
+		tailBody.transform.Rotate(Vector3.forward*Time.deltaTime*step);
+		if(tailBody.transform.localPosition.y>tailStartingPosition.y) {
+			step2 *= -1;
+		}
+		tailBody.transform.localPosition = Vector2.MoveTowards(tailBody.transform.localPosition, tailStartingPosition, step2);
+	}
+
+	void movementDeciding(float valueXL, float valueYL,float valueXR, float valueYR) {
+		/*float valueXL = Input.GetAxis ("Horizontal");
 		float valueYL = Input.GetAxis ("Vertical");
 
 		float valueXR = Input.GetAxis ("Horizontal2");
-		float valueYR = Input.GetAxis ("Vertical2");
+		float valueYR = Input.GetAxis ("Vertical2");*/
 
-		Debug.Log(topBody.transform.rotation.eulerAngles.z);
-		float step = -_rotationTailSpeed * Time.deltaTime * 5;
-		if(tailBody.transform.rotation.eulerAngles.z<180) {
+		//Debug.Log(tailBody.transform.rotation.eulerAngles.z);
+
+		/*float step = -_rotationTailSpeed * Time.deltaTime*100;
+		float step2 = _rotationTailSpeed * Time.deltaTime;
+		if(tailBody.transform.rotation.eulerAngles.z<90) {
 			step *= -1;
-		}
-		Debug.Log(topBody.transform.rotation.eulerAngles.z+" vs "+Quaternion.identity);
+		}*/
+		//Debug.Log(" vs "+topBody.transform.rotation.eulerAngles.z+" vs "+Quaternion.identity);
 
+		//tailBody.transform.rotation =  Quaternion.RotateTowards(tailBody.transform.rotation, _QuaternionZero, step*10000);
 
-Debug.Log("ground "+isGrounded);
+		//Debug.Log("ground "+isGrounded);
 		//jumping
 		if(isGrounded) {
+			if(tailBody.GetComponent<Rigidbody2D>().mass!=startingTailMass){
+				//tailBody.GetComponent<Rigidbody2D>().mass = startingTailMass;
+			}
 
-			if((topBody.transform.rotation.eulerAngles.z>70 && topBody.transform.rotation.eulerAngles.z<250)) {
-				tailBody.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeRotation;
+			if((topBody.transform.rotation.eulerAngles.z>_degreeMax*1.5f && topBody.transform.rotation.eulerAngles.z<360-_degreeMax*1.5f)) {
+				//tailBody.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeRotation;
 				tailBody.GetComponent<Rigidbody2D>().simulated = false;
 
 				topBody.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.None;
-				//tailBody.transform.rotation =  Quaternion.identity;//Quaternion.RotateTowards(tailBody.transform.rotation, Quaternion.identity, step);
+
+				//if(tailBody.transform.rotation.eulerAngles.z<90.0f || tailBody.transform.rotation.eulerAngles.z>91.0f) {
+					//tailBody.transform.Rotate(Vector3.forward*Time.deltaTime*step);
+					//tailBody.transform.localPosition = tailStartingPosition;
+					//tailBody.transform.localPosition = Vector2.MoveTowards(tailBody.transform.localPosition, tailStartingPosition, step2);
+				//}
+				smoothTailReset();
+
+				//tailBody.transform.rotation =  Quaternion.RotateTowards(tailBody.transform.rotation, _QuaternionZero, step*100);
 				Debug.Log("aaa");
 				valueXL = valueXR = 0;
 				jumpAction = true;
 				if(valueYL>_minToJump && valueYR>_minToJump) {
-					topBody.GetComponent<Rigidbody2D>().AddForce(new Vector2(0,(valueYL+valueYR)*_jumpingPower));
+					tailBody.GetComponent<Rigidbody2D>().mass = startingTailMass;
+
+					//topBody.GetComponent<Rigidbody2D>().AddForce(new Vector2(0,(valueYL+valueYR)*_jumpingPower));
 					tailBody.GetComponent<Rigidbody2D>().AddForce(new Vector2(0,(valueYL+valueYR)*_jumpingPower));
 					Debug.Log("be");
 					//tailBody.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.None;
 					tailBody.GetComponent<Rigidbody2D>().simulated = true;
 
 					topBody.GetComponent<Rigidbody2D>().constraints = topBodyCons;
+					tailBody.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeRotation;
 				}
 			} else {
 
 
 
 			//Debug.Log(valueXL);
-				Debug.Log(topBody.transform.rotation.eulerAngles.z);
+				//Debug.Log(topBody.transform.rotation.eulerAngles.z);
 				if(valueXL<0 && topBody.transform.rotation.eulerAngles.z>180 && topBody.transform.rotation.eulerAngles.z<360-_degreeMax) {
 					valueXL=0;
 				} else if(valueXL>0 && topBody.transform.rotation.eulerAngles.z<180 && topBody.transform.rotation.eulerAngles.z>_degreeMax) {
@@ -184,25 +236,29 @@ Debug.Log("ground "+isGrounded);
 
 				//topBody.Find("bottom").GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.None;
 				if(valueYL>_minToJump && valueYR>_minToJump) {
-					jumpAction = true;
+					//jumpAction = true;
+					setJumpAction();
+
 					tailBody.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeRotation;
 					//topBody.GetComponent<Rigidbody2D>().AddForce(new Vector2(0,sumOfTwo(valueYL, valueYR)*_jumpingPowerHigh));
 					topBody.GetComponent<Rigidbody2D>().AddForce(new Vector2(0,valueYL*_jumpingPowerHigh));
-					tailBody.GetComponent<Rigidbody2D>().AddForce(new Vector2(0,valueYR*_jumpingPowerHigh));
+					tailBody.GetComponent<Rigidbody2D>().AddForce(new Vector2(0,valueYR*_jumpingPowerHigh*_MinMass));
 					//gameObject.transform.Translate(sumOfTwo(valueYL, valueYR)*transform.up*Time.deltaTime*_jumpingPowerHigh);
 				} else if(valueYL>_minToJump && valueYR<=_minToJump) {
-					jumpAction = true;
+					//jumpAction = true;
+					setJumpAction();
 
 					tailBody.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeRotation;
 					topBody.GetComponent<Rigidbody2D>().AddForce(new Vector2(0,valueYL*_jumpingPower));
-					tailBody.GetComponent<Rigidbody2D>().AddForce(new Vector2(0,valueYL*_jumpingPower));
+					tailBody.GetComponent<Rigidbody2D>().AddForce(new Vector2(0,valueYL*_jumpingPower*_MinMass));
 					//gameObject.transform.Translate(valueYL*transform.up*Time.deltaTime*_jumpingPower);
 				} else if(valueYL<=_minToJump && valueYR>_minToJump) {
-					jumpAction = true;
+					//jumpAction = true;
+					setJumpAction();
 
 					tailBody.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeRotation;
 					topBody.GetComponent<Rigidbody2D>().AddForce(new Vector2(0,valueYR*_jumpingPower));
-					tailBody.GetComponent<Rigidbody2D>().AddForce(new Vector2(0,valueYR*_jumpingPower));
+					tailBody.GetComponent<Rigidbody2D>().AddForce(new Vector2(0,valueYR*_jumpingPower*_MinMass));
 					//gameObject.transform.Translate(valueYR*transform.up*Time.deltaTime*_jumpingPower);
 				}
 
@@ -216,6 +272,10 @@ Debug.Log("ground "+isGrounded);
 
 
 		} else {
+			if(tailBody.GetComponent<Rigidbody2D>().mass==startingTailMass){
+				//tailBody.GetComponent<Rigidbody2D>().mass = _MinMass;
+			}
+			//smoothTailReset();
 			if(tailBody.transform.rotation.z!=0) {
 
 				//tailBody.transform.rotation =  Quaternion.RotateTowards(tailBody.transform.rotation, Quaternion.identity, step);
@@ -266,29 +326,43 @@ Debug.Log("ground "+isGrounded);
 		}
 	}
 
-
+	void setJumpAction() {
+		tailBody.GetComponent<Rigidbody2D>().mass = _MinMass;
+		jumpAction = true;
+	}
 
 	void controlMouth() {
 		SpriteRenderer eyelidSprite = gameObject.transform.Find("top/mouth").GetComponent<SpriteRenderer>();
 		int levelLifeUp = _teethNumber-(lifeUp/teethLevels);
 		int levelLifeDown = _teethNumber-(lifeDown/teethLevels);
 		//string mouthId = "lose"+levelLifeUp+"Up"+levelLifeDown+"Down";
-		Debug.Log(levelLifeUp+" vs "+levelLifeDown);
+		//Debug.Log(levelLifeUp+" vs "+levelLifeDown);
 		eyelidSprite.sprite = allMouth[levelLifeUp][levelLifeDown];
 	}
 
+	float[] movementArray = new float[4];
 	// Update is called once per frame
 	void FixedUpdate () {
-		movementDeciding();
+		if(IsAI) {
+			//movementArray = ai.reachAnalogs();
+			//Debug.Log("ai analoging: "+movementArray[0]+" vs "+movementArray[1]+" vs "+movementArray[2]+" vs "+movementArray[3]);
+			//movementDeciding(movementArray[0],movementArray[1],movementArray[2],movementArray[3]);
+		} else {
+			//movementArray = {Input.GetAxis ("Horizontal"), Input.GetAxis ("Vertical"), Input.GetAxis ("Horizontal2"), Input.GetAxis ("Vertical2")};
+			movementDeciding(Input.GetAxis ("Horizontal"), Input.GetAxis ("Vertical"), Input.GetAxis ("Horizontal2"), Input.GetAxis ("Vertical2"));
+		}
+
+
 
 		topAngle.transform.position=topAngleHolder.transform.position;
+		bottomAngle.transform.position=bottomAngleHolder.transform.position;
 		//if(topAngle.transform.position!=topAngleHolder.tra)
 		//	GameObject.Find("Avatar1 (1)").transform.Find("top").transform.Rotate(Vector3.forward * Time.deltaTime*8);
 	}
 
-	IEnumerator switchCombo()
+	/*IEnumerator switchCombo()
 	{
 		yield return new WaitForSeconds(5);
-		Debug.Log("A");
-	}
+		//Debug.Log("A");
+	}*/
 }

@@ -18,7 +18,7 @@ using System.Data.SqlClient;
 public class InputControl : MonoBehaviour {
 
 	bool listining = false;
-	const int _howManyStrengthLevels = 4;
+	public const int _howManyStrengthLevels = 4;
 
 
 	[System.Serializable]
@@ -46,6 +46,13 @@ public class InputControl : MonoBehaviour {
 			this.numberOfMoves++;
 			this.Moves.Add(newMove);
 			this.totalDuration += newMove.duration;
+		}
+		public float wholeTime() {
+			float returnTime = 0;
+			for(int i=0; i<this.Moves.Count; i++) {
+				returnTime += this.Moves[i].duration;
+			}
+			return returnTime;
 		}
 	}
 
@@ -244,7 +251,7 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 						pathToSave="distance="+ i + " and life="
 								+ i2 + " and angle=" + i3;
 						loadedMoves.Select(pathToSave)[0]["combo"] = allRanksToSave[temp];
-						Debug.Log(((Echo.rememberCombo)(allRanksToSave[temp][0])).score);
+						//Debug.Log(((Echo.rememberCombo)(allRanksToSave[temp][0])).score);
 						temp++;
 					}
 				}
@@ -285,6 +292,7 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 		return 0;
 	}
 	string defineState(float X, float Y) {
+		Debug.Log("defining state with X: "+X+" and Y:"+Y);
 		string state = null;
 		float strengthX = X==0 ? 0 : defineStrength(X);
 		float strengthY = Y==0 ? 0 : defineStrength(Y);
@@ -295,25 +303,31 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 			return "0.0";
 		} else if(X>=0) {
 			if(Y==0) {
-				angle=2;
-			} else if(Y>0){
+				angle=9;
+			} else if(Y>0) {
 				float mainDiff = X/Y;
-				if(mainDiff>=0 && mainDiff<1) {
+				if(X==0) {
+					angle=10;
+				}
+				else if(mainDiff>=0 && mainDiff<1) {
 					angle=1;
 				} else{
 					angle=2;
 				}
 			} else {
 				float mainDiff = X/-Y;
-				if(mainDiff>=0 && mainDiff<1) {
-					angle=4;
-				} else{
+				if(X==0) {
+					angle=11;
+				}
+				else if(mainDiff>=0 && mainDiff<1) {
 					angle=3;
+				} else{
+					angle=4;
 				}
 			}
 		} else {
 			if(Y==0) {
-				angle=6;
+				angle=12;
 			} else {
 				if(Y<0) {
 					float mainDiff = X/Y;
@@ -324,7 +338,7 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 					}
 				} else {
 					float mainDiff = X/-Y;
-					if(mainDiff>=1) {
+					if(mainDiff>=0 && mainDiff<1) {
 						angle=7;
 					} else {
 						angle=8;
@@ -333,6 +347,7 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 			}
 		}
 		state = angle+"."+strength;
+		Debug.Log("defined as: "+state);
 		return state;
 	}
 
@@ -379,6 +394,7 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 			Echo.rememberCombo dataForEcho = new Echo.rememberCombo(recordingCombo.id, recordingCombo.score, recordingSituation);
 			ParameterizedThreadStart start = new ParameterizedThreadStart(GameObject.Find("Main Camera").GetComponent<Echo>().addComboToEcho);
 			Thread threadSaveNewCombo = new Thread(start);
+			Debug.Log(dataForEcho.id);
 			threadSaveNewCombo.Start(dataForEcho);
 //			threadSaveNewCombo = new Thread(GameObject.Find("Main Camera").GetComponent<Echo>().addComboToEcho);
 	//		threadSaveNewCombo.Start();
@@ -502,6 +518,7 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 						|| currentStateL!=recordingCombo.Moves[recordingCombo.numberOfMoves-1].analogStateL
 						|| currentStateR!=recordingCombo.Moves[recordingCombo.numberOfMoves-1].analogStateR))) {
 						if(recordingCombo.numberOfMoves>0) {
+							Debug.Log("move time set: "+(Time.time - calculatedMoveTime));
 							recordingCombo.Moves[recordingCombo.numberOfMoves-1].duration = Time.time - calculatedMoveTime;
 							if(currentStateL!=lastStateL) {
 								recordingCombo.Moves[recordingCombo.numberOfMoves-1].style = wasChangeFast(diffXL, diffYL);
