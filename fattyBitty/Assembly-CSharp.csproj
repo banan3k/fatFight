@@ -57,7 +57,8 @@
      <Compile Include="Assets\Scripts\Echo.cs" />
      <Compile Include="Assets\Scripts\GroundedControl.cs" />
      <Compile Include="Assets\Scripts\InputControl.cs" />
-     <Compile Include="Assets\Scripts\test1.cs" />
+     <Compile Include="Assets\Scripts\Menu.cs" />
+     <Compile Include="Assets\Scripts\Punch.cs" />
  <Reference Include="Facebook.Unity.Settings">
  <HintPath>/home/maupa/Desktop/Studia/Magisterka/Program/fattyBitty/Library/FacebookSDK/Facebook.Unity.Settings.dll</HintPath>
  </Reference>

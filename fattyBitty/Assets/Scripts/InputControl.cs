@@ -16,6 +16,20 @@ using System.Data;
 using System.Data.SqlClient;
 
 public class InputControl : MonoBehaviour {
+ 	private GUIStyle guiStyle = new GUIStyle();
+	bool showStart = true;
+	void OnGUI() {
+		guiStyle.fontSize = 100;
+		if(timeToStart>0) {
+			if(timeToStart>=3) {
+	 			GUI.Label(new Rect(Screen.width/2, 100, 100, 200), Mathf.FloorToInt(timeToStart).ToString(), guiStyle);
+			} else {
+				GUI.Label(new Rect(Screen.width/2, 100, 100, 200), Mathf.Ceil(timeToStart).ToString(), guiStyle);
+			}
+		} else if(showStart){
+			GUI.Label(new Rect(Screen.width/3, 100, 100, 200), "START", guiStyle);
+		}
+	}
 
 	bool listining = false;
 	public const int _howManyStrengthLevels = 4;
@@ -50,12 +64,17 @@ public class InputControl : MonoBehaviour {
 		public float wholeTime() {
 			float returnTime = 0;
 			for(int i=0; i<this.Moves.Count; i++) {
-				returnTime += this.Moves[i].duration;
+				if(this.Moves[i].duration>=AImove.actionTime*this.Moves[i].actions.Count) {
+					returnTime += this.Moves[i].duration;
+				} else {
+					returnTime += AImove.actionTime*this.Moves[i].actions.Count;
+				}
 			}
 			return returnTime;
 		}
 	}
 
+	//const float actionTime = 0.5f; //half s.
 
 	[System.Serializable]
 	public class Move
@@ -64,7 +83,7 @@ public class InputControl : MonoBehaviour {
 			public string analogStateR = "0.0";
 			public string blockState = "0.0"; //x.y - x - left block, y - right block
 	    public List<int> actions = new List<int>();
-			public float duration=1;
+			public float duration=0;
 			public bool style=false;
 	    public Move(string state="0.0", string state2="0.0", string blocking="0.0", List<int> actionList=null, float howLong=1, bool whatStyle=false)
 	    {
@@ -78,7 +97,10 @@ public class InputControl : MonoBehaviour {
 					style = whatStyle;
 	    }
 	}
-	void saveToFile(Dictionary<string, Combo> comboToSave, bool createBackup=true) {
+	public void saveToFile(Dictionary<string, Combo> comboToSave, bool createBackup=true) {
+		if(comboToSave==null) {
+			comboToSave = everyCombo;
+		}
 		if(createBackup) {
 			if(File.Exists("AImemory.gg")) {
 					try
@@ -140,7 +162,7 @@ public class InputControl : MonoBehaviour {
 			//Debug.Log(allRanksToSave[i].Count);
 		}
 
-		int temp = 0;
+		//int temp = 0;
 		for(int i=0; i<Echo.distanceSplit.Length; i++) {
 			for(int i2=0; i2<Echo.lifeSplit.Length; i2++) {
 				for(int i3=0; i3<=Mathf.Floor(360/Echo.angleSplit); i3++) {
@@ -356,14 +378,48 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 	Echo EchoScript;
 	Echo.Situation recordingSituation;
 
+	public bool gameStarted = false;
+	float timeToStart = 0;//3.99f;
+	private IEnumerator CountDown(float waitTime)
+  {
+      yield return new WaitForSeconds(waitTime);
+			listining = true;
+			Debug.Log("started");
+			gameStarted = true;
+			coroutine = CountDownStart(1.0f);
+			StartCoroutine(coroutine);
+  }
+	private IEnumerator CountDownStart(float waitTime)
+	{
+			yield return new WaitForSeconds(waitTime);
+			showStart = false;
+	}
+  public void startAgain() {
+    Debug.Log("START AGAIN");
+    GameObject.Find("Avatar1").transform.GetChild(0).position = new Vector2(2.5f,0);
+    GameObject.Find("Avatar2").transform.GetChild(0).position = new Vector2(-5,0);
+
+    GameObject.Find("Avatar1").transform.GetChild(0).Find("bottom").transform.rotation = new Quaternion(0,0,0,0);
+    GameObject.Find("Avatar2").transform.GetChild(0).Find("bottom").transform.rotation = new Quaternion(0,0,0,0);
+    gameStarted = listining = false;
+    showStart = true;
+    coroutine = CountDown(timeToStart);
+    StartCoroutine(coroutine);
+  }
+  private IEnumerator coroutine;
 	void Start () {
+    startAgain();
 
 		EchoScript = GameObject.Find("Main Camera").GetComponent<Echo>();
 		recordingSituation = new Echo.Situation();
 
 		allCombos = new List<Combo>();
-		listining = true;
+
 		Debug.Log(Input.GetJoystickNames()[0]);
+
+		if(Input.GetJoystickNames().Length>1) {
+				GameObject.Find("Avatar2").GetComponent<BodyControl>().aiOff(true);
+		}
 		//Move tempMove = new Move();
 	//	Move tempMove2 = new Move();
 		//Combo newCombo = new Combo();
@@ -389,6 +445,7 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 			StopCoroutine("switchCombo");
 			allCombos.Add(recordingCombo);
 			Debug.Log("adding ID : "+recordingCombo.id);
+			Debug.Log("with actions as :"+recordingCombo.Moves[0].actions);
 			everyCombo.Add(recordingCombo.id,recordingCombo);
 
 			Echo.rememberCombo dataForEcho = new Echo.rememberCombo(recordingCombo.id, recordingCombo.score, recordingSituation);
@@ -410,7 +467,7 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 	string currentStateL="", lastStateL="";
 	string currentStateR="", lastStateR="";
 	float calculatedMoveTime = 0;
-	string currentBlock = "";
+	string currentBlock = "0.0";
 
 	float limitForFast = 0.1f;
 	bool wasChangeFast(float diffX, float diffY) {
@@ -428,10 +485,22 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 
 	public int pressedAction() {
 
-		for (int i = 0;i < 20; i++) {
+		for (int i = 0; i < 20; i++) {
 				if(Input.GetKeyDown("joystick 1 button "+i)){
 					print("joystick 1 button "+i);
+					GameObject.Find("Avatar1").GetComponent<BodyControl>().MakeAction(i);
 					return i;
+				}
+				if(Input.GetKeyDown("joystick 2 button "+i)){
+					if(GameObject.Find("Main Camera").GetComponent<AImove>().enabled==true) {
+						GameObject.Find("Avatar2").GetComponent<BodyControl>().aiOff(true);
+					} else if(i==4) {
+						GameObject.Find("Avatar2").GetComponent<BodyControl>().aiOff(false);
+					} else {
+						print("joystick 2 button "+i);
+						GameObject.Find("Avatar2").GetComponent<BodyControl>().MakeAction(i);
+						return i;
+					}
 				}
 		}
 		return -1;
@@ -445,8 +514,37 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 	float diffXR = 0, diffYR = 0;
 	float blockL = 0, blockR = 0;
 
+	string defineBlockState(float L, float R) {
+		int leftBlockMode = 0;
+		if(L<0) {
+			leftBlockMode = -1;
+		} else if(L>0) {
+			leftBlockMode = 1;
+		}
+
+		int rightBlockMode = 0;
+		if(R>0) {
+			rightBlockMode = -1;
+		} else if(R<0) {
+			rightBlockMode = 1;
+		}
+		string blockModeStr = leftBlockMode+"."+rightBlockMode;
+		//if(rightBlockMode!=0 || leftBlockMode != 0) {
+		GameObject.Find("Avatar1").GetComponent<BodyControl>().MakeBlock(leftBlockMode, rightBlockMode);
+		//}
+		return blockModeStr;
+	}
+
+
 	int clickedAction = -1;
 	void Update () {
+		if(!gameStarted) {
+			if(timeToStart>0) {
+				timeToStart -= Time.deltaTime;
+			}
+		} else {
+			timeToStart = -1;
+		}
 
 		if (Input.GetKeyDown (KeyCode.S)) {
 		//	 saveToFile(allCombos);
@@ -470,6 +568,8 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 		//Debug.Log(Input.GetAxis ("Horizontal2")+" vs "+Input.GetAxis ("Vertical2"));
 
 		if(listining) {
+			currentBlock = defineBlockState(Input.GetAxis("L2"), Input.GetAxis("R2"));
+
 			clickedAction = pressedAction();
 
 			if(speedChangeNewXL != valueXL) {
@@ -494,11 +594,14 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 			diffYR = speedChangeNewYR - speedChangeLastYR;
 			//Debug.Log(wasChangeFast(diffX, diffY));
 			//Debug.Log(speedChangeNewX - speedChangeLastX);
-			if(valueXL!=0 || valueYL!=0 || valueXR!=0 || valueYR!=0 || clickedAction>=0) {
+			if(valueXL!=0 || valueYL!=0 || valueXR!=0 || valueYR!=0 || clickedAction>=0
+				|| (currentBlock!="0.0" || (recordingCombo!=null && currentBlock!=recordingCombo.Moves[recordingCombo.numberOfMoves-1].blockState))) {
+
 					StopCoroutine("switchCombo");
 
 
 					if(changeState==0) {
+						//Debug.Log("new comboooooo");
 
 						//if(recordingCombo.Moves.Count>0) {
 					//		Debug.Log("added");
@@ -513,6 +616,7 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 					currentStateR = defineState(valueXR, valueYR);
 
 					currentBlock = blockL+"."+blockR;
+					Debug.Log("current block : " +currentBlock);
 
 					if(recordingCombo.numberOfMoves==0 || (recordingCombo.numberOfMoves>0 && (currentBlock!=recordingCombo.Moves[recordingCombo.numberOfMoves-1].blockState
 						|| currentStateL!=recordingCombo.Moves[recordingCombo.numberOfMoves-1].analogStateL
@@ -555,6 +659,7 @@ Debug.Log(((OrderedDictionary)(loadedMoves.Select(pathToSave)[0]["echoCombo"]))[
 					StopCoroutine("switchCombo");
 					StartCoroutine("switchCombo");
 					Debug.Log("just stated "+Time.deltaTime+" "+gameObject.transform.name);
+
 				}
 			}
 		}

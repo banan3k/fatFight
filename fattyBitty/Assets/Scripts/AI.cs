@@ -141,7 +141,7 @@ yield return new WaitForSeconds(3000);
 	float stepsToReachXL, stepsToReachYL, stepsToReachXR, stepsToReachYR;
 	float trueXL, trueYL, trueXR, trueYR;
 	public float[] reachAnalogs() {
-		float[] AIanalogs = new float[4];
+		//float[] AIanalogs = new float[4];
 		if(trueXL!=XL) {
 			trueXL += stepsToReachXL/10;//*Time.fixedDeltaTime;
 		}

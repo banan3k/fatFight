@@ -138,9 +138,16 @@ public class Echo : MonoBehaviour {
 		for(int i=0; i<howManyRows; i++){
 			if(comboToChange.score>(int)((List<rememberCombo>)(EchoRank.Select(pathToSave)[0]["combo"]))[i].score) {
 				((List<rememberCombo>)(EchoRank.Select(pathToSave)[0]["combo"])).Insert(i, comboToChange);
+				Debug.Log("actualization on combo AI: "+i+" and "+comboToChange.score+"/"+(int)((List<rememberCombo>)(EchoRank.Select(pathToSave)[0]["combo"]))[i].score);
 				break;
 			}
+			if(i==howManyRows-1) {
+				((List<rememberCombo>)(EchoRank.Select(pathToSave)[0]["combo"])).Add(comboToChange);
+				Debug.Log("adding to the end combo AI: "+i+" and "+comboToChange.score+"/"+(int)((List<rememberCombo>)(EchoRank.Select(pathToSave)[0]["combo"]))[i].score);
+
+			}
 		}
+		//co jeśli nie przewyzsza wgl
 
 	}
 	public void getCombo2() {
@@ -164,18 +171,18 @@ public class Echo : MonoBehaviour {
 
 
 			for(int i=0; i<comboNumbers; i++) {
-				Debug.Log(((List<rememberCombo>)(EchoRank.Select(pathToSave)[i]["combo"])).Count);
+				//Debug.Log(((List<rememberCombo>)(EchoRank.Select(pathToSave)[i]["combo"])).Count);
 				if(((List<rememberCombo>)(EchoRank.Select(pathToSave)[i]["combo"])).Count>0 && (chosenEntry==null || (int)chosenEntry.score<(int)((List<rememberCombo>)(EchoRank.Select(pathToSave)[i]["combo"]))[0].score)) {
 					chosenEntry = ((List<rememberCombo>)(EchoRank.Select(pathToSave)[i]["combo"]))[0];
 					chosenSituation = i;
-					Debug.Log(" going thru ID  :"+chosenEntry.id+" vs "+chosenEntry.score);
+			//		Debug.Log(" going thru ID  :"+chosenEntry.id+" vs "+chosenEntry.score);
 				}
 			}
 			if(chosenSituation>=0) {
 				((List<rememberCombo>)(EchoRank.Select(pathToSave)[chosenSituation]["combo"])).RemoveAt(0);
 
 				string chosenID = (string)chosenEntry.id;
-				Debug.Log("chosen ID now :"+chosenID);
+				Debug.Log("chosen2 ID now :"+chosenID);
 				InputControl.Combo chosenCombo = inputCon.everyCombo[chosenID];
 
 				chosenSituationForRecord = actualSituation;
@@ -281,7 +288,7 @@ chosenEntry = ((List<rememberCombo>)(EchoRank.Select(pathToSave)[0]["combo"]))[0
 
 		//	EchoRank.Rows.Add(0, 0, 0, new OrderedDictionary());
 		//	EchoRank.Rows.Add(0, 0, 1, new OrderedDictionary());
-		int temp = 0;
+		//int temp = 0;
 			for(int i=0; i<distanceSplit.Length; i++) {
 				for(int i2=0; i2<lifeSplit.Length; i2++) {
 					for(int i3=0; i3<=Mathf.Floor(360/angleSplit); i3++) {
@@ -295,8 +302,8 @@ chosenEntry = ((List<rememberCombo>)(EchoRank.Select(pathToSave)[0]["combo"]))[0
 						*/
 						//Debug.Log(temp);
 						EchoRank.Rows.Add(i, i2, i3, new List<rememberCombo>());
-						string pathToSave="distance="+ i + " and life="
-								+ i2 + " and angle=" + i3;
+						/*string pathToSave="distance="+ i + " and life="
+								+ i2 + " and angle=" + i3;*/
 							//Debug.Log(i+" vs "+i2+" vs "+i3);
 						//((List<rememberCombo>)(EchoRank.Select(pathToSave)[0]["combo"])).Add(new rememberCombo(temp.ToString(), temp));
 						//temp++;
@@ -310,9 +317,11 @@ chosenEntry = ((List<rememberCombo>)(EchoRank.Select(pathToSave)[0]["combo"]))[0
 
 		Avatar1 = GameObject.Find("Avatar1");
 		Avatar2 = GameObject.Find("Avatar2");
-		listining = true;
 
-		AImove.startAImoves();
+		if(GameObject.Find("Main Camera").GetComponent<InputControl>().gameStarted) {
+			listining = true;
+			AImove.startAImoves();
+		}
 	}
 
 	GameObject Avatar1, Avatar2;
